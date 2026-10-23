@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAST CHAMBER — Browser P2P</title>
+<style>
+:root{--cream:#d5c29e;--muted:#a38c68;--line:#806749;--green:#b8f3a0;--red:#b53c2e}
+*{box-sizing:border-box}body{margin:0;background:#0b0807;color:var(--cream);font-family:"Courier New","Malgun Gothic",monospace}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at center,#443627,#17110e 70%,#050404);box-shadow:inset 0 0 100px #000}
+header{padding:14px 20px;background:#0c0908eF;border-bottom:2px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+h1{font-size:21px;letter-spacing:.2em;margin:0}h1 span{color:#b94335}.tag{font-size:9px;color:var(--muted);letter-spacing:.2em;margin-top:4px}
+main{max-width:1050px;margin:auto;padding:14px}.panel,.fighter{background:linear-gradient(145deg,#403222ed,#17110eed);border:2px solid #796347;box-shadow:inset 0 0 0 3px #1a120c,0 8px 20px #0008;padding:14px;margin-bottom:12px}
+h2{font-size:12px;letter-spacing:.15em;margin:0 0 10px;color:#e0cda7}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,textarea{background:#060605;color:#d7c49f;border:1px solid #8a7350;padding:9px;font:inherit;min-width:0}textarea{width:100%;min-height:100px;resize:vertical;font-size:10px}
+button{background:linear-gradient(#5a452e,#251811);border:2px solid #92764c;color:#e3d0a6;padding:10px 12px;font:inherit;font-size:10px;cursor:pointer}button:disabled{opacity:.35;cursor:not-allowed}button:hover:not(:disabled){border-color:var(--green)}
+.note{font-size:10px;line-height:1.7;color:#b9a27d}.status{font-size:11px;line-height:1.7;color:#d7c5a3}
+#gameCanvas{display:block;width:100%;height:auto;max-height:52vh;border:2px solid #806748;background:#100b08;box-shadow:inset 0 0 0 4px #1a120c,0 8px 20px #0008;margin-bottom:12px}.hidden{display:none!important}.arena{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px}.fighter{margin:0}.fighter h3{font-size:14px}.hp{font-size:11px}.hearts{color:#c84435;letter-spacing:2px}.center{padding:14px;text-align:center;background:radial-gradient(ellipse,#57452e,#17100c 72%);border:3px solid #806748;display:flex;flex-direction:column;justify-content:space-between}
+.digital{display:inline-block;background:#020503;color:var(--green);border:2px solid #9a825a;padding:7px 15px;font-size:23px;text-shadow:0 0 8px #8bff79;margin:6px}
+.table{height:95px;margin:10px auto;width:100%;max-width:290px;border-radius:50%;border:8px solid #655137;outline:1px solid #b09a70;background:radial-gradient(ellipse,#766044,#211811 75%);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 4px #20150d,0 8px 16px #000}
+.shells{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}.shell{width:13px;height:31px;background:linear-gradient(90deg,#401713,#b94232,#401713);border:1px solid #c88769;border-radius:3px}.shell.blank{background:linear-gradient(90deg,#49351d,#cba158,#49351d)}.shell.unknown{filter:grayscale(1);opacity:.5}
+.msg{font-size:10px;line-height:1.6;background:#080706eF;border:1px solid #786244;padding:9px;margin-top:8px;min-height:42px}
+.items{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.item{min-height:56px;padding:6px 3px;font-size:9px}.item span{display:block;font-size:17px}.item small{display:block;color:#b9a27d;font-size:8px}.item.selected{border-color:var(--green)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.actions button:last-child{grid-column:1/-1}
+.log{font-size:10px;line-height:1.7;color:#c9b38d;max-height:100px;overflow:auto}
+@media(max-width:650px){.arena{grid-template-columns:1fr 1fr}.center{grid-column:1/-1;grid-row:1}.items{grid-template-columns:repeat(2,1fr)}header{padding:12px}h1{font-size:17px}} 
+</style></head>
+<body>
+<header><div><h1>LAST <span>CHAMBER</span></h1><div class="tag">BROWSER-ONLY · PEER TO PEER</div></div><div class="status" id="connStatus">연결되지 않음</div></header>
+<main>
+<section class="panel">
+<h2>▣ 다른 기기와 연결 (Node.js 설치 불필요)</h2>
+<p class="note">두 플레이어 모두 이 HTML 파일을 열어야 합니다. 연결은 WebRTC로 직접 시도합니다. 인터넷 환경에 따라 연결이 안 될 수 있으며, 연결 신호는 아래 텍스트를 복사해 메신저로 교환합니다.</p>
+<div class="row"><button id="hostBtn">방 만들기 (호스트)</button><button id="joinBtn">방 참가 준비</button><button id="copyBtn">신호 복사</button><button id="applyBtn">상대 신호 적용</button></div>
+<p class="note">내 연결 신호 / 상대 신호</p>
+<textarea id="signal" placeholder="버튼을 누르면 연결 신호가 여기에 표시됩니다. 상대가 보낸 신호를 붙여넣고 '상대 신호 적용'을 누르세요."></textarea>
+<div id="sigHelp" class="status">1) 호스트가 방 만들기 → 신호를 복사해 게스트에게 전달. 2) 게스트는 방 참가 준비 → 호스트 신호를 적용 → 생성된 답변 신호를 호스트에게 전달. 3) 호스트가 답변 신호를 적용.</div>
+</section>
+<section id="game" class="hidden">
+<canvas id="gameCanvas" width="1000" height="420" aria-label="게임 테이블 캔버스"></canvas>
+<div class="arena" style="display:none">
+<article class="fighter"><div class="tag">SUBJECT A</div><h3 id="p0name">플레이어 1</h3><div class="hp" id="p0hp">체력 4/4</div><div class="hearts" id="p0hearts">♥ ♥ ♥ ♥</div><div class="status" id="p0armor"></div><div class="status" id="p0turn"></div></article>
+<article class="center"><div><div class="tag">탄약실 상태</div><div class="digital" id="ammoCount">06 발</div><div class="status" id="ammoInfo">정보 미확인</div></div><div class="table"><div class="shells" id="shells"></div></div><div class="msg" id="message">상대 연결 대기 중...</div></article>
+<article class="fighter"><div class="tag">SUBJECT B</div><h3 id="p1name">플레이어 2</h3><div class="hp" id="p1hp">체력 4/4</div><div class="hearts" id="p1hearts">♥ ♥ ♥ ♥</div><div class="status" id="p1armor"></div><div class="status" id="p1turn"></div></article>
+</div>
+<section class="panel" style="margin-top:12px"><h2>▧ 소지 아이템</h2><div class="items" id="items"></div><div class="actions"><button id="shootEnemy">↗ 상대를 겨눈다</button><button id="shootSelf">↻ 자신을 겨눈다</button><button id="useItem">선택한 아이템 사용</button></div></section>
+<section class="panel"><h2>▤ 기록 장치</h2><div id="log" class="log"></div></section>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let pc,dc,host=false,slot=0,game=null,selected=null,seed=0;
+const itemDefs=[["scanner","⌕","탄환 스캐너","다음 탄환 확인",1],["plate","⬡","방탄판","다음 피해 방어",1],["pause","◷","시간 정지","상대 행동 취소",1],["smoke","▧","연막 캡슐","정보 교란",1],["medkit","✚","응급 키트","체력 1 회복",2],["magnet","⌁","탄환 자석","탄환 제거",1],["double","Ⅱ","이중 기회","피해 +1",1],["peek","◉","잔향 분석기","탄약 비율",1]];
+const ice={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+function setStatus(s){$("connStatus").textContent=s}
+function createPC(isHost){host=isHost;slot=isHost?0:1;pc=new RTCPeerConnection(ice);pc.onconnectionstatechange=()=>{setStatus(pc.connectionState);if(pc.connectionState==="connected"&&host&&!game){startGame()}};pc.ondatachannel=e=>{dc=e.channel;setupDC()};if(isHost){dc=pc.createDataChannel("last-chamber");setupDC()} }
+function setupDC(){dc.onopen=()=>{setStatus("상대 연결됨");$("sigHelp").textContent="연결 성공! 호스트가 게임 상태를 시작하고 동기화합니다.";if(host)startGame()};dc.onclose=()=>setStatus("상대 연결 끊김");dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==="state"){game=m.game;render()}else if(m.type==="action"&&host){doAction(m.slot,m.action,m.target,m.item)}}}
+async function hostBtn(){createPC(true);const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitIce();$("signal").value=JSON.stringify(pc.localDescription);$("sigHelp").textContent="호스트 신호를 복사해 친구에게 보내세요. 친구가 답변 신호를 보내면 여기에 붙여넣고 '상대 신호 적용'을 누르세요."}
+async function joinBtn(){createPC(false);const offer=JSON.parse($("signal").value);await pc.setRemoteDescription(offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitIce();$("signal").value=JSON.stringify(pc.localDescription);$("sigHelp").textContent="이 답변 신호를 복사해 호스트에게 보내세요. 호스트가 답변을 적용하면 연결됩니다."}
+async function applySignal(){if(!pc){alert("먼저 방 만들기 또는 방 참가 준비를 눌러 주세요.");return}const obj=JSON.parse($("signal").value);await pc.setRemoteDescription(obj);if(host&&obj.type==="answer"){$("sigHelp").textContent="답변을 적용했습니다. 연결 중..."}else if(!host&&obj.type==="offer"){$("sigHelp").textContent="호스트 신호 적용 완료. 방 참가 준비를 눌러 답변을 생성하세요."}}
+function waitIce(){return new Promise(resolve=>{if(pc.iceGatheringState==="complete")return resolve();let timer=setTimeout(resolve,5000);pc.addEventListener("icegatheringstatechange",function f(){if(pc.iceGatheringState==="complete"){clearTimeout(timer);pc.removeEventListener("icegatheringstatechange",f);resolve()}})})}
+function send(m){if(dc&&dc.readyState==="open")dc.send(JSON.stringify(m));else alert("상대와 연결되지 않았습니다. 연결 신호 교환을 완료하세요.")}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function ammo(round){let n=6+Math.min(2,round-1),live=Math.ceil(n*(.4+Math.random()*.25));return shuffle([...Array(live).fill(true),...Array(n-live).fill(false)])}
+function newPlayer(name){return{name,hp:4,max:4,armor:0,boost:0,items:Object.fromEntries(itemDefs.map(x=>[x[0],x[4]])),known:{}}}
+function startGame(){if(!host||game)return;game={round:1,active:0,ammo:ammo(1),players:[newPlayer("플레이어 1"),newPlayer("플레이어 2")],message:"대전 시작. 플레이어 1 차례.",log:["직접 연결 완료. 온라인 대전 시작."],over:false,winner:null};broadcastState()}
+function broadcastState(){if(!game)return;render();if(host&&dc&&dc.readyState==="open")dc.send(JSON.stringify({type:"state",game}))}
+function log(s){game.log.unshift(s);game.log=game.log.slice(0,8)}
+function act(action,target,item){if(!game||game.over)return;if(game.active!==slot){alert("상대 차례입니다.");return}if(host)doAction(slot,action,target,item);else send({type:"action",slot,action,target,item})}
+function doAction(who,action,target,item){if(!host)return;let g=game;if(!g||g.over||g.active!==who)return;let me=g.players[who],op=g.players[1-who],msg="";
+if(action==="shoot"){if(!g.ammo.length){g.round++;if(g.round>5){g.over=true;g.winner=g.players[0].hp===g.players[1].hp?-1:(g.players[0].hp>g.players[1].hp?0:1);g.message="라운드 종료";broadcastState();return}g.ammo=ammo(g.round)}
+let bullet=g.ammo.shift(),t=target==="self"?who:1-who;if(bullet){let dmg=1;if(t!==who&&me.boost){dmg++;me.boost=0}if(g.players[t].armor)g.players[t].armor--;else g.players[t].hp=Math.max(0,g.players[t].hp-dmg);msg="실탄 발사! "+g.players[t].name+" 대상."}else msg="공포탄. 피해 없음.";g.message=msg;log(msg);if(g.players.some(p=>p.hp<=0)){g.over=true;g.winner=g.players[0].hp<=0?1:0;g.message=g.players[g.winner].name+" 승리!";log(g.message)}else if(!(target==="self"&&!bullet))g.active=1-who;
+}else if(action==="item"){if(!me.items[item])return;switch(item){case"scanner":msg="스캐너: 다음 탄환 "+(g.ammo.at(-1)?"실탄":"공포탄");break;case"plate":me.armor++;msg="방탄판 장착";break;case"pause":msg="시간 정지 장치: 다음 턴을 넘깁니다";break;case"smoke":msg="연막 캡슐 사용";break;case"medkit":if(me.hp>=me.max)return;me.hp=Math.min(me.max,me.hp+1);msg="체력 1 회복";break;case"magnet":if(g.ammo.length<2)return;g.ammo.pop();msg="마지막 탄환 제거";break;case"double":me.boost=1;msg="다음 명중 피해 +1";break;case"peek":msg="남은 실탄 "+g.ammo.filter(Boolean).length+" / 공포탄 "+g.ammo.filter(x=>!x).length;break}me.items[item]--;g.message=msg;log(me.name+": "+msg);g.active=1-who}
+broadcastState()}
+
+function drawCanvas(){
+ const c=$("gameCanvas"); if(!c||!game)return;
+ const ctx=c.getContext("2d"),w=c.width,h=c.height;
+ ctx.clearRect(0,0,w,h);
+ // dim, distressed tabletop background
+ const bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,"#51412d");bg.addColorStop(.45,"#2b2118");bg.addColorStop(1,"#100b09");
+ ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+ // grain and subtle scratches, deterministic
+ for(let i=0;i<95;i++){let x=(i*173+31)%w,y=(i*67+19)%h;ctx.fillStyle=i%3?"rgba(0,0,0,.10)":"rgba(230,205,158,.07)";ctx.fillRect(x,y,((i%9)+2),1)}
+ // vignette
+ let vg=ctx.createRadialGradient(w/2,h/2,80,w/2,h/2,550);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.75)");ctx.fillStyle=vg;ctx.fillRect(0,0,w,h);
+ function plate(x,y,ww,hh){ctx.fillStyle="#17100c";ctx.fillRect(x+4,y+5,ww,hh);ctx.fillStyle="#8a704d";ctx.fillRect(x,y,ww,hh);ctx.fillStyle="#35271b";ctx.fillRect(x+3,y+3,ww-6,hh-6);ctx.strokeStyle="#b39a70";ctx.lineWidth=1;ctx.strokeRect(x+5,y+5,ww-10,hh-10)}
+ function text(t,x,y,size=16,color="#d8c49e",align="left"){ctx.font=`${size}px Courier New, monospace`;ctx.fillStyle=color;ctx.textAlign=align;ctx.fillText(t,x,y)}
+ function bolt(x,y){ctx.fillStyle="#b69a6c";ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#34261a";ctx.fillRect(x-2,y-1,4,2)}
+ // header label
+ text("LAST CHAMBER // LIVE MATCH",22,29,13,"#aa9068");
+ // side player panels
+ const ps=game.players;
+ [[22,54,215,150,ps[0],0],[763,54,215,150,ps[1],1]].forEach(([x,y,ww,hh,p,i])=>{
+   plate(x,y,ww,hh);[x+12,x+ww-12].forEach(xx=>{bolt(xx,y+12);bolt(xx,y+hh-12)});
+   text(i===0?"SUBJECT A":"SUBJECT B",x+ww/2,y+30,11,"#b69b70","center");
+   text(p.name,x+ww/2,y+57,18,"#e3d0a7","center");
+   text(`VITALITY  ${p.hp}/${p.max}`,x+ww/2,y+82,13,"#c8b38d","center");
+   text("♥ ".repeat(p.hp)+"♡ ".repeat(p.max-p.hp),x+ww/2,y+107,16,"#bd4436","center");
+   text(p.armor?`PLATE ×${p.armor}`:"NO ARMOR",x+ww/2,y+130,10,"#9c8767","center");
+   if(game.active===i&&!game.over){ctx.strokeStyle="#b8f3a0";ctx.lineWidth=2;ctx.strokeRect(x+2,y+2,ww-4,hh-4);text("YOUR TURN",x+ww/2,y+hh-20,10,"#b8f3a0","center")}
+ });
+ // circular central loading table
+ const cx=w/2,cy=230;
+ ctx.save();ctx.translate(cx,cy);ctx.scale(1.45,.76);
+ let rg=ctx.createRadialGradient(-15,-20,15,0,0,115);rg.addColorStop(0,"#806747");rg.addColorStop(.58,"#4a3927");rg.addColorStop(1,"#17100b");
+ ctx.fillStyle="#090605";ctx.beginPath();ctx.arc(0,7,126,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#8b714d";ctx.beginPath();ctx.arc(0,0,121,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#21170f";ctx.beginPath();ctx.arc(0,0,114,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=rg;ctx.beginPath();ctx.arc(0,0,108,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle="#b19a70";ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,94,0,Math.PI*2);ctx.stroke();
+ ctx.strokeStyle="rgba(12,8,5,.8)";ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,82,0,Math.PI*2);ctx.stroke();
+ ctx.restore();
+ // bolts around table
+ for(let a=0;a<12;a++){let ang=a*Math.PI/6;bolt(cx+Math.cos(ang)*170,cy+Math.sin(ang)*90)}
+ // ammo shells on the table
+ const count=game.ammo.length,shown=Math.min(count,10);
+ for(let i=0;i<shown;i++){let x=cx-(shown-1)*17/2+i*17,y=cy-17+(i%2)*5;
+   ctx.fillStyle="#170c09";ctx.fillRect(x-5,y-18,11,35);
+   let g=ctx.createLinearGradient(x-5,0,x+6,0);g.addColorStop(0,"#451812");g.addColorStop(.5,"#b24432");g.addColorStop(1,"#421711");ctx.fillStyle=g;ctx.fillRect(x-4,y-17,9,31);
+   ctx.fillStyle="#d0a16c";ctx.fillRect(x-4,y-17,9,5);ctx.strokeStyle="#e1b080";ctx.strokeRect(x-4,y-17,9,31);
+ }
+ // digital ammo display
+ plate(cx-62,65,124,44);text(String(count).padStart(2,"0")+" ROUNDS",cx,93,16,"#b8f3a0","center");
+ text(`ROUND ${game.round}`,cx,130,12,"#c6b18a","center");
+ // center message plaque
+ plate(cx-255,350,510,48);
+ text(game.message.length>58?game.message.slice(0,55)+"…":game.message,cx,379,13,"#e1cda4","center");
+ // turn indicator bottom
+ text(game.over?(game.winner<0?"DRAW":"WINNER: "+ps[game.winner].name):"TURN: "+ps[game.active].name,cx,414,11,game.over?"#b8f3a0":"#b69a70","center");
+}
+
+function render(){if(!game)return;$("game").classList.remove("hidden");drawCanvas();game.players.forEach((p,i)=>{$("p"+i+"name").textContent=p.name;$("p"+i+"hp").textContent=`체력 ${p.hp}/${p.max}`;$("p"+i+"hearts").textContent="♥ ".repeat(p.hp)+"♡ ".repeat(p.max-p.hp);$("p"+i+"armor").textContent=p.armor?"방탄판 ×"+p.armor:"";$("p"+i+"turn").textContent=game.active===i?"▶ 행동 차례":"대기 중"});$("ammoCount").textContent=String(game.ammo.length).padStart(2,"0")+" 발";$("ammoInfo").textContent="탄약 구성은 아이템으로 추리하세요";$("shells").innerHTML=game.ammo.map(()=>'<div class="shell unknown"></div>').join("");$("message").textContent=game.message;$("log").innerHTML=game.log.map(s=>"<div>▸ "+esc(s)+"</div>").join("");let me=game.players[slot];$("items").innerHTML=itemDefs.map(([id,ic,n,d])=>`<button class="item ${selected===id?"selected":""}" data-id="${id}" ${!myTurn()||!me.items[id]||game.over?"disabled":""}><span>${ic}</span>${n}<small>${d} ×${me.items[id]}</small></button>`).join("");$("items").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{selected=b.dataset.id;render()});$("shootEnemy").disabled=!myTurn()||game.over;$("shootSelf").disabled=!myTurn()||game.over;$("useItem").disabled=!myTurn()||game.over||!selected}
+function myTurn(){return game&&game.active===slot}function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+$("hostBtn").onclick=()=>hostBtn().catch(e=>alert("방 만들기 실패: "+e.message));
+$("joinBtn").onclick=()=>joinBtn().catch(e=>alert("방 참가 준비 실패: "+e.message));
+$("copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText($("signal").value);alert("신호를 복사했어요")}catch{ $("signal").select();document.execCommand("copy");alert("신호를 복사했어요")}};
+$("applyBtn").onclick=()=>applySignal().catch(e=>alert("신호 적용 실패: "+e.message));
+$("shootEnemy").onclick=()=>act("shoot","enemy");$("shootSelf").onclick=()=>act("shoot","self");$("useItem").onclick=()=>{if(selected)act("item",null,selected);selected=null};
+</script></body></html>
