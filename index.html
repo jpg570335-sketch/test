@@ -23,9 +23,170 @@ button{background:linear-gradient(#5a452e,#251811);border:2px solid #92764c;colo
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.actions button:last-child{grid-column:1/-1}
 .log{font-size:10px;line-height:1.7;color:#c9b38d;max-height:100px;overflow:auto}
 @media(max-width:650px){.arena{grid-template-columns:1fr 1fr}.center{grid-column:1/-1;grid-row:1}.items{grid-template-columns:repeat(2,1fr)}header{padding:12px}h1{font-size:17px}} 
-</style></head>
-<body>
+</style>
+<style id="mobile-ai-updates">
+/* Mobile-first usability */
+* { box-sizing: border-box; }
+html, body { width: 100%; min-height: 100%; margin: 0; }
+body { overflow-x: hidden; }
+button, textarea, input, select { font: inherit; }
+button { min-height: 42px; touch-action: manipulation; }
+textarea { font-size: 12px; }
+.mobile-modebar { display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 14px; }
+.mobile-modebar button { flex:1 1 145px; }
+#aiPanel { border:1px solid #806a45; background:rgba(20,15,10,.82); padding:12px; margin:10px 0 14px; }
+#aiPanel h3 { margin:0 0 8px; font-size:15px; color:#e8d7b2; }
+#aiPanel p { margin:5px 0 10px; line-height:1.5; font-size:12px; color:#c8b895; }
+#aiPanel .ai-options { display:flex; flex-wrap:wrap; gap:8px; }
+#aiPanel button { flex:1 1 120px; }
+#aiPanel button.active { outline:2px solid #c7a56b; background:#4a3824; }
+@media (max-width: 700px) {
+  body { font-size: 14px; }
+  header, .topbar { padding-left:12px !important; padding-right:12px !important; }
+  main, .container, .wrap { width:100% !important; max-width:100% !important; padding-left:10px !important; padding-right:10px !important; }
+  canvas { display:block; width:100% !important; height:auto !important; max-width:100%; }
+  textarea, input, select { width:100% !important; max-width:100%; }
+  #connectionPanel, .connection, .panel { max-width:100%; }
+  button { padding:10px 12px; }
+  .mobile-modebar button { flex:1 1 calc(50% - 8px); }
+  #aiPanel { padding:10px; }
+  #aiPanel .ai-options { display:grid; grid-template-columns:1fr 1fr; }
+  #signal { min-height:130px; overflow-wrap:anywhere; }
+}
+</style>
+
+
+<style id="natural-ui-polish">
+:root {
+  --lc-bg: #17120e;
+  --lc-panel: #241a13;
+  --lc-panel-2: #302319;
+  --lc-brass: #8d7047;
+  --lc-brass-soft: #6f5738;
+  --lc-cream: #d7c39a;
+  --lc-muted: #9e8967;
+  --lc-red: #a53b31;
+}
+html, body {
+  background:
+    radial-gradient(ellipse at 50% 25%, rgba(102,72,43,.18), transparent 55%),
+    linear-gradient(180deg, #110d0a, #1c140f 48%, #100c09) !important;
+  color: var(--lc-cream);
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: .015em;
+}
+body::before {
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.11;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
+}
+header, main, section, .panel, #aiPanel, #connectionPanel, .arena, .inventory, .log {
+  position:relative; z-index:1;
+}
+button {
+  border:1px solid #8b6b42 !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,#493522,#2b1e14) !important;
+  color:#e0cda5 !important;
+  box-shadow:inset 0 1px rgba(255,230,180,.12), 0 2px 0 #100b08 !important;
+  transition:background .12s ease, transform .12s ease, border-color .12s ease;
+}
+button:hover { background:linear-gradient(180deg,#59412a,#362519) !important; border-color:#b29361 !important; }
+button:active { transform:translateY(1px); box-shadow:inset 0 1px 4px #100b08 !important; }
+button.active, button:focus-visible { outline:1px solid #b6a16d !important; outline-offset:1px; }
+textarea, input, select {
+  border:1px solid #806542 !important; border-radius:0 !important;
+  background:#100d0a !important; color:#dfcfad !important;
+}
+#aiPanel, .panel, .connection, #connectionPanel {
+  border:1px solid #6f5638 !important;
+  background:linear-gradient(145deg,rgba(44,32,22,.97),rgba(24,17,12,.97)) !important;
+  box-shadow:0 7px 18px rgba(0,0,0,.2), inset 0 1px rgba(255,230,180,.04) !important;
+}
+#aiPanel { border-left:3px solid #8a3028 !important; }
+#aiPanel h3 { font-size:14px; letter-spacing:.12em; text-transform:uppercase; }
+#aiPanel p { color:#b4a07c !important; }
+canvas { filter:contrast(1.02) saturate(.88); }
+* { scrollbar-color:#6b5134 #17110d; }
+@media(max-width:700px) {
+  body { background:#17110d !important; }
+  #aiPanel, .panel, .connection, #connectionPanel { margin-left:0 !important; margin-right:0 !important; }
+  button { min-height:46px; }
+}
+</style>
+
+
+<style id="natural-mobile-layout">
+@media(max-width:700px) {
+  header { min-height:56px; }
+  header h1 { letter-spacing:.12em; }
+  #aiPanel { margin-top:12px; }
+  #aiPanel .ai-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  canvas { image-rendering:auto; }
+  textarea { line-height:1.35; }
+}
+</style>
+
+
+<style id="cinematic-3d">
+#game { perspective:1100px; transform-style:preserve-3d; }
+#gameCanvas {
+  transform: rotateX(2deg) translateZ(0);
+  transform-origin:center;
+  border:1px solid #8c7048;
+  box-shadow:0 24px 32px rgba(0,0,0,.42), inset 0 0 30px rgba(0,0,0,.5);
+}
+#gameCanvas, .panel, .fighter { backface-visibility:hidden; }
+.item { transform:translateZ(0); transition:transform .18s ease, box-shadow .18s ease; }
+.item:active { transform:translateY(3px) rotateX(8deg); }
+#motionStage {
+ position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center;
+ background:radial-gradient(ellipse at center,rgba(44,30,18,.72),rgba(0,0,0,.92));
+ perspective:900px; pointer-events:none;
+}
+#motionStage.show { display:flex; }
+#motionObject {
+ width:180px;height:110px; position:relative; display:flex;align-items:center;justify-content:center;
+ color:#e0cda5; font:16px Georgia,serif; letter-spacing:.12em; text-align:center;
+ border:2px solid #a78a59; background:linear-gradient(145deg,#60472d,#21160f);
+ box-shadow:0 24px 35px #000b,inset 0 0 0 5px #2b1d12;
+ transform-style:preserve-3d; animation:objectEnter .75s ease both;
+}
+#motionObject::before {content:"";position:absolute;inset:7px;border:1px solid #8b7048;transform:translateZ(-10px);}
+#motionStage.show.shot #motionObject { animation:shotKick .55s ease both; }
+#motionStage.show.blank #motionObject { animation:blankClick .65s ease both; }
+#motionStage.show.item #motionObject { animation:itemUse .7s cubic-bezier(.2,.8,.2,1) both; }
+#motionStage.show.opponent #motionObject { animation:flyOpponent .6s ease both; }
+#motionStage.show.self #motionObject { animation:flySelf .6s ease both; }
+@keyframes objectEnter {from{opacity:0;transform:rotateY(-35deg) rotateX(25deg) translateY(50px) scale(.6)}to{opacity:1;transform:rotateY(0) rotateX(0) translateY(0) scale(1)}}
+@keyframes shotKick {0%{transform:translateZ(0) rotateX(0)}30%{transform:translateZ(65px) rotateX(-12deg) scale(1.08);filter:brightness(1.8)}100%{transform:translateZ(0) rotateX(0);filter:brightness(1)}}
+@keyframes blankClick {0%,100%{transform:rotateX(0)}35%{transform:rotateX(20deg) translateY(12px)}60%{transform:rotateX(-7deg)}}
+@keyframes itemUse {0%{opacity:0;transform:translateY(100px) rotateX(50deg) rotateZ(-12deg) scale(.5)}45%{opacity:1;transform:translateY(-18px) rotateX(-8deg) rotateZ(3deg) scale(1.12)}100%{opacity:0;transform:translateY(-60px) rotateX(20deg) scale(.9)}}
+@keyframes flyOpponent {0%{transform:translateX(0) rotateY(0)}45%{transform:translateX(100px) rotateY(35deg) scale(1.1)}100%{transform:translateX(0) rotateY(0)}}
+@keyframes flySelf {0%{transform:translateX(0)}40%{transform:translateX(-55px) rotateY(-25deg)}100%{transform:translateX(0)}}
+@media(max-width:700px){
+ #gameCanvas{transform:none}
+ #motionObject{width:145px;height:90px;font-size:13px}
+}
+</style>
+
+</head>
+<body><div id="motionStage"><div id="motionObject">LAST CHAMBER</div></div>
 <header><div><h1>LAST <span>CHAMBER</span></h1><div class="tag">BROWSER-ONLY · PEER TO PEER</div></div><div class="status" id="connStatus">연결되지 않음</div></header>
+
+<section id="aiPanel">
+  <h3>혼자 플레이</h3>
+  <p>친구 연결 없이 컴퓨터와 바로 대결할 수 있어요. 난이도를 고른 다음 아래 버튼으로 AI 대전을 시작하세요.</p>
+  <div class="ai-options">
+    <button type="button" id="aiEasy">AI 쉬움</button>
+    <button type="button" id="aiNormal" class="active">AI 보통</button>
+    <button type="button" id="aiHard">AI 어려움</button>
+    <button type="button" id="startAI">혼자 시작</button>
+  </div>
+  <p id="aiStatus" aria-live="polite">AI 보통 선택됨</p>
+</section>
+
+
 <main>
 <section class="panel">
 <h2>▣ 다른 기기와 연결 (Node.js 설치 불필요)</h2>
@@ -33,7 +194,7 @@ button{background:linear-gradient(#5a452e,#251811);border:2px solid #92764c;colo
 <div class="row"><button id="hostBtn">방 만들기 (호스트)</button><button id="joinBtn">방 참가 준비</button><button id="copyBtn">신호 복사</button><button id="applyBtn">상대 신호 적용</button></div>
 <p class="note">내 연결 신호 / 상대 신호</p>
 <textarea id="signal" placeholder="버튼을 누르면 연결 신호가 여기에 표시됩니다. 상대가 보낸 신호를 붙여넣고 '상대 신호 적용'을 누르세요."></textarea>
-<div id="sigHelp" class="status">1) 호스트가 방 만들기 → 신호를 복사해 게스트에게 전달. 2) 게스트는 방 참가 준비 → 호스트 신호를 적용 → 생성된 답변 신호를 호스트에게 전달. 3) 호스트가 답변 신호를 적용.</div>
+<div id="sigHelp" class="status">1) 호스트: 방 만들기 → 신호 복사 후 게스트에게 전달. 2) 게스트: 호스트 신호를 입력란에 붙여 넣고 방 참가 준비 → 생성된 답변 신호를 호스트에게 전달. 3) 호스트: 게스트 답변 신호를 입력란에 붙여 넣고 상대 신호 적용을 한 번만 누르세요.</div>
 </section>
 <section id="game" class="hidden">
 <canvas id="gameCanvas" width="1000" height="420" aria-label="게임 테이블 캔버스"></canvas>
@@ -49,28 +210,137 @@ button{background:linear-gradient(#5a452e,#251811);border:2px solid #92764c;colo
 <script>
 const $=id=>document.getElementById(id);
 let pc,dc,host=false,slot=0,game=null,selected=null,seed=0;
-const itemDefs=[["scanner","⌕","탄환 스캐너","다음 탄환 확인",1],["plate","⬡","방탄판","다음 피해 방어",1],["pause","◷","시간 정지","상대 행동 취소",1],["smoke","▧","연막 캡슐","정보 교란",1],["medkit","✚","응급 키트","체력 1 회복",2],["magnet","⌁","탄환 자석","탄환 제거",1],["double","Ⅱ","이중 기회","피해 +1",1],["peek","◉","잔향 분석기","탄약 비율",1]];
+const itemDefs=[
+["cigarette","♨","담배","체력 1 회복",2],
+["beer","▱","맥주","현재 탄환 배출",1],
+["magnifier","⌕","돋보기","현재 탄환 확인",1],
+["cuffs","⛓","수갑","상대 턴 건너뛰기",1],
+["saw","⚒","쇠톱","다음 발사 피해 2배",1],
+["phone","☎","대포폰","남은 탄환 예고",1],
+["inverter","⇄","인버터","현재 탄환 반전",1],
+["adrenaline","⚡","아드레날린","상대 아이템 강탈 후 사용",1],
+["pills","◉","상한 약","체력 ±1 확률",1]
+]
 const ice={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
 function setStatus(s){$("connStatus").textContent=s}
 function createPC(isHost){host=isHost;slot=isHost?0:1;pc=new RTCPeerConnection(ice);pc.onconnectionstatechange=()=>{setStatus(pc.connectionState);if(pc.connectionState==="connected"&&host&&!game){startGame()}};pc.ondatachannel=e=>{dc=e.channel;setupDC()};if(isHost){dc=pc.createDataChannel("last-chamber");setupDC()} }
 function setupDC(){dc.onopen=()=>{setStatus("상대 연결됨");$("sigHelp").textContent="연결 성공! 호스트가 게임 상태를 시작하고 동기화합니다.";if(host)startGame()};dc.onclose=()=>setStatus("상대 연결 끊김");dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==="state"){game=m.game;render()}else if(m.type==="action"&&host){doAction(m.slot,m.action,m.target,m.item)}}}
 async function hostBtn(){createPC(true);const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitIce();$("signal").value=JSON.stringify(pc.localDescription);$("sigHelp").textContent="호스트 신호를 복사해 친구에게 보내세요. 친구가 답변 신호를 보내면 여기에 붙여넣고 '상대 신호 적용'을 누르세요."}
 async function joinBtn(){createPC(false);const offer=JSON.parse($("signal").value);await pc.setRemoteDescription(offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitIce();$("signal").value=JSON.stringify(pc.localDescription);$("sigHelp").textContent="이 답변 신호를 복사해 호스트에게 보내세요. 호스트가 답변을 적용하면 연결됩니다."}
-async function applySignal(){if(!pc){alert("먼저 방 만들기 또는 방 참가 준비를 눌러 주세요.");return}const obj=JSON.parse($("signal").value);await pc.setRemoteDescription(obj);if(host&&obj.type==="answer"){$("sigHelp").textContent="답변을 적용했습니다. 연결 중..."}else if(!host&&obj.type==="offer"){$("sigHelp").textContent="호스트 신호 적용 완료. 방 참가 준비를 눌러 답변을 생성하세요."}}
+async function applySignal(){
+ try{
+  if(!pc){alert("먼저 방 만들기 또는 방 참가 준비를 눌러 주세요.");return}
+  const obj=JSON.parse($("signal").value);
+  if(host){
+   if(obj.type!=="answer"){alert("호스트에서는 참가자가 보낸 답변(answer) 신호를 붙여 넣어 주세요.");return}
+   if(pc.signalingState!=="have-local-offer"){
+    if(pc.signalingState==="stable" && pc.remoteDescription && pc.remoteDescription.type==="answer"){
+     $("sigHelp").textContent="답변은 이미 적용되었습니다. 연결 상태를 확인하세요.";
+     setStatus(pc.connectionState); return;
+    }
+    alert("현재 연결 상태에서는 답변을 적용할 수 없습니다. 호스트가 새 방을 만들고 신호 교환을 처음부터 다시 해 주세요.");
+    return;
+   }
+   await pc.setRemoteDescription(obj);
+   $("sigHelp").textContent="답변을 적용했습니다. 연결 중...";
+  }else{
+   if(obj.type!=="offer"){alert("참가자에서는 호스트의 offer 신호를 붙여 넣은 뒤 '방 참가 준비'를 눌러 주세요.");return}
+   alert("참가자는 호스트 offer를 '방 참가 준비' 버튼으로 처리합니다. '상대 신호 적용' 대신 '방 참가 준비'를 눌러 주세요.");
+  }
+ }catch(err){
+  $("sigHelp").textContent="신호 적용 실패: "+(err && err.message ? err.message : String(err));
+ }
+}
 function waitIce(){return new Promise(resolve=>{if(pc.iceGatheringState==="complete")return resolve();let timer=setTimeout(resolve,5000);pc.addEventListener("icegatheringstatechange",function f(){if(pc.iceGatheringState==="complete"){clearTimeout(timer);pc.removeEventListener("icegatheringstatechange",f);resolve()}})})}
 function send(m){if(dc&&dc.readyState==="open")dc.send(JSON.stringify(m));else alert("상대와 연결되지 않았습니다. 연결 신호 교환을 완료하세요.")}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function ammo(round){let n=6+Math.min(2,round-1),live=Math.ceil(n*(.4+Math.random()*.25));return shuffle([...Array(live).fill(true),...Array(n-live).fill(false)])}
-function newPlayer(name){return{name,hp:4,max:4,armor:0,boost:0,items:Object.fromEntries(itemDefs.map(x=>[x[0],x[4]])),known:{}}}
-function startGame(){if(!host||game)return;game={round:1,active:0,ammo:ammo(1),players:[newPlayer("플레이어 1"),newPlayer("플레이어 2")],message:"대전 시작. 플레이어 1 차례.",log:["직접 연결 완료. 온라인 대전 시작."],over:false,winner:null};broadcastState()}
+function ammo(round){
+ let n=round===1?6:round===2?8:10;
+ let live=Math.max(1,Math.min(n-1,Math.round(n*(.4+Math.random()*.25))));
+ return shuffle([...Array(live).fill(true),...Array(n-live).fill(false)]);
+}
+function newPlayer(name){return{name,hp:4,max:4,armor:0,boost:0,saw:0,skip:0,revived:false,items:Object.fromEntries(itemDefs.map(x=>[x[0],x[4]])),known:{}}}
+function startGame(){if(!host||game)return;game={round:1,active:0,ammo:ammo(1),players:[newPlayer("나"),newPlayer("상대")],message:"대전 시작. 당신이 먼저 행동합니다.",log:["대전 시작."],over:false,winner:null,shot:false};broadcastState()}
 function broadcastState(){if(!game)return;render();if(host&&dc&&dc.readyState==="open")dc.send(JSON.stringify({type:"state",game}))}
 function log(s){game.log.unshift(s);game.log=game.log.slice(0,8)}
 function act(action,target,item){if(!game||game.over)return;if(game.active!==slot){alert("상대 차례입니다.");return}if(host)doAction(slot,action,target,item);else send({type:"action",slot,action,target,item})}
-function doAction(who,action,target,item){if(!host)return;let g=game;if(!g||g.over||g.active!==who)return;let me=g.players[who],op=g.players[1-who],msg="";
-if(action==="shoot"){if(!g.ammo.length){g.round++;if(g.round>5){g.over=true;g.winner=g.players[0].hp===g.players[1].hp?-1:(g.players[0].hp>g.players[1].hp?0:1);g.message="라운드 종료";broadcastState();return}g.ammo=ammo(g.round)}
-let bullet=g.ammo.shift(),t=target==="self"?who:1-who;if(bullet){let dmg=1;if(t!==who&&me.boost){dmg++;me.boost=0}if(g.players[t].armor)g.players[t].armor--;else g.players[t].hp=Math.max(0,g.players[t].hp-dmg);msg="실탄 발사! "+g.players[t].name+" 대상."}else msg="공포탄. 피해 없음.";g.message=msg;log(msg);if(g.players.some(p=>p.hp<=0)){g.over=true;g.winner=g.players[0].hp<=0?1:0;g.message=g.players[g.winner].name+" 승리!";log(g.message)}else if(!(target==="self"&&!bullet))g.active=1-who;
-}else if(action==="item"){if(!me.items[item])return;switch(item){case"scanner":msg="스캐너: 다음 탄환 "+(g.ammo.at(-1)?"실탄":"공포탄");break;case"plate":me.armor++;msg="방탄판 장착";break;case"pause":msg="시간 정지 장치: 다음 턴을 넘깁니다";break;case"smoke":msg="연막 캡슐 사용";break;case"medkit":if(me.hp>=me.max)return;me.hp=Math.min(me.max,me.hp+1);msg="체력 1 회복";break;case"magnet":if(g.ammo.length<2)return;g.ammo.pop();msg="마지막 탄환 제거";break;case"double":me.boost=1;msg="다음 명중 피해 +1";break;case"peek":msg="남은 실탄 "+g.ammo.filter(Boolean).length+" / 공포탄 "+g.ammo.filter(x=>!x).length;break}me.items[item]--;g.message=msg;log(me.name+": "+msg);g.active=1-who}
-broadcastState()}
+function finishRoundIfEmpty(){
+ let g=game;
+ if(g.ammo.length>0)return false;
+ if(g.round>=3){
+   g.over=true;
+   g.winner=g.players[0].hp===g.players[1].hp?-1:(g.players[0].hp>g.players[1].hp?0:1);
+   g.message=g.winner===-1?"무승부":g.players[g.winner].name+" 승리!";
+   log(g.message); return true;
+ }
+ g.round++;g.ammo=ammo(g.round);g.players.forEach(p=>{p.saw=0;p.known={};});
+ g.active=0;g.message="라운드 "+g.round+" 시작. 플레이어가 먼저 행동합니다.";log(g.message);
+ return true;
+}
+function useItemEffect(who,item){
+ let g=game,me=g.players[who],op=g.players[1-who],msg="";
+ switch(item){
+ case"cigarette": if(me.hp>=me.max)return null;me.hp=Math.min(me.max,me.hp+1);msg="담배를 피우고 체력을 1 회복했다.";break;
+ case"beer": if(!g.ammo.length)return null;g.ammo.pop();msg="맥주로 현재 탄환을 배출했다.";break;
+ case"magnifier": if(!g.ammo.length)return null;me.known.top=g.ammo[g.ammo.length-1];msg="돋보기로 현재 탄환을 확인했다.";break;
+ case"cuffs": op.skip=1;msg="수갑을 채웠다. 상대의 다음 턴이 취소된다.";break;
+ case"saw": me.saw=1;msg="쇠톱으로 총열을 잘랐다. 다음 발사는 피해 2.";break;
+ case"phone": if(!g.ammo.length)return null;let idx=Math.floor(Math.random()*g.ammo.length);me.known["phone"+idx]=g.ammo[idx];msg="대포폰 예고: 남은 탄환 하나에서 "+(g.ammo[idx]?"실탄":"공포탄")+" 소리가 들렸다.";break;
+ case"inverter": if(!g.ammo.length)return null;g.ammo[g.ammo.length-1]=!g.ammo[g.ammo.length-1];msg="인버터가 현재 탄환의 성질을 반전시켰다.";break;
+ case"adrenaline":
+   let available=itemDefs.filter(x=>op.items[x[0]]>0).map(x=>x[0]);
+   if(!available.length)return null;
+   let stolen=available[Math.floor(Math.random()*available.length)];
+   op.items[stolen]--;msg="아드레날린으로 상대의 "+itemDefs.find(x=>x[0]===stolen)[2]+"을 빼앗았다.";
+   let effect=useItemEffect(who,stolen);
+   if(effect)msg+=" "+effect;
+   break;
+ case"pills": if(Math.random()<.5){me.hp=Math.min(me.max,me.hp+1);msg="상한 약 효과: 체력 +1."}else{me.hp=Math.max(0,me.hp-1);msg="상한 약 부작용: 체력 -1."}break;
+ }
+ return msg;
+}
+function doAction(who,action,target,item){
+ if(!host)return;
+ let g=game;if(!g||g.over||g.active!==who)return;
+ let me=g.players[who],op=g.players[1-who],msg="";
+ if(action==="shoot"){
+   if(!g.ammo.length){finishRoundIfEmpty();broadcastState();return}
+   let bullet=g.ammo.pop(),t=target==="self"?who:1-who;
+   if(bullet){
+     let dmg=me.saw?2:1;me.saw=0;
+     if(g.players[t].armor)g.players[t].armor=Math.max(0,g.players[t].armor-dmg);
+     else g.players[t].hp=Math.max(0,g.players[t].hp-dmg);
+     msg="실탄 발사! "+g.players[t].name+"에게 "+dmg+" 피해.";
+     playItemMotion("shot",target==="self"?"self":"opponent");
+   }else{
+     msg="공포탄. 피해 없음.";
+     playItemMotion("blank",target==="self"?"self":"opponent");
+   }
+   g.message=msg;log(msg);
+   if(g.players[t].hp<=0){
+     if(g.round<=2&&!g.players[t].revived){
+       g.players[t].hp=1;g.players[t].revived=true;
+       msg+=" 제세동기 작동! 체력 1로 부활.";
+       g.message=msg;log("제세동기 작동: "+g.players[t].name+" 부활.");
+     }else{
+       g.over=true;g.winner=1-t;g.message=g.players[g.winner].name+" 승리!";log(g.message);
+     }
+   }
+   if(!g.over){
+     if(target==="self"&&!bullet){g.active=who;g.message+=" 공포탄이므로 턴 유지."}
+     else g.active=1-who;
+     if(g.players[g.active].skip>0){g.players[g.active].skip--;g.message+=" 상대의 턴이 수갑으로 취소됐다.";g.active=who;}
+     if(!g.ammo.length)finishRoundIfEmpty();
+   }
+ }else if(action==="item"){
+   if(!me.items[item])return;
+   let effect=useItemEffect(who,item);if(!effect)return;
+   me.items[item]--;msg=effect;g.message=msg;log(me.name+": "+msg);
+   playItemMotion(item);
+   // Item usage does not automatically end the turn.
+ } 
+ broadcastState();
+}
 
 function drawCanvas(){
  const c=$("gameCanvas"); if(!c||!game)return;
@@ -121,7 +391,7 @@ function drawCanvas(){
  }
  // digital ammo display
  plate(cx-62,65,124,44);text(String(count).padStart(2,"0")+" ROUNDS",cx,93,16,"#b8f3a0","center");
- text(`ROUND ${game.round}`,cx,130,12,"#c6b18a","center");
+ text(`ROUND ${game.round} / 3`,cx,130,12,"#c6b18a","center");
  // center message plaque
  plate(cx-255,350,510,48);
  text(game.message.length>58?game.message.slice(0,55)+"…":game.message,cx,379,13,"#e1cda4","center");
@@ -136,4 +406,70 @@ $("joinBtn").onclick=()=>joinBtn().catch(e=>alert("방 참가 준비 실패: "+e
 $("copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText($("signal").value);alert("신호를 복사했어요")}catch{ $("signal").select();document.execCommand("copy");alert("신호를 복사했어요")}};
 $("applyBtn").onclick=()=>applySignal().catch(e=>alert("신호 적용 실패: "+e.message));
 $("shootEnemy").onclick=()=>act("shoot","enemy");$("shootSelf").onclick=()=>act("shoot","self");$("useItem").onclick=()=>{if(selected)act("item",null,selected);selected=null};
-</script></body></html>
+</script>
+<script id="ai-mode-logic">
+(function(){
+ let aiLevel="normal", aiTimer=null, aiMode=false;
+ const $id=id=>document.getElementById(id);
+ function choose(level){aiLevel=level;["aiEasy","aiNormal","aiHard"].forEach(id=>{const b=$id(id);if(b)b.classList.toggle("active",id===({easy:"aiEasy",normal:"aiNormal",hard:"aiHard"}[level]));});const st=$id("aiStatus");if(st)st.textContent="AI "+({easy:"쉬움",normal:"보통",hard:"어려움"}[level])+" 선택됨";}
+ function startAI(){
+   if(typeof game==="undefined" || typeof newPlayer!=="function"){alert("게임 초기화 오류가 발생했습니다. 페이지를 새로고침해 주세요.");return;}
+   if(aiTimer){clearTimeout(aiTimer);aiTimer=null}
+   aiMode=true; host=true; slot=0;
+   game={round:1,active:0,ammo:ammo(1),players:[newPlayer("나"),newPlayer("AI 상대")],message:"불이 켜졌다. 네 차례다.",log:["AI 대전 시작."],over:false,winner:null};
+   if(typeof broadcastState==="function")broadcastState();
+   const st=$id("aiStatus");if(st)st.textContent="상대 난이도: "+({easy:"쉬움",normal:"보통",hard:"어려움"}[aiLevel]);
+ }
+ function aiTurn(){
+   aiTimer=null;
+   if(!aiMode || !game || game.over || game.active!==1)return;
+   const ai=game.players[1], player=game.players[0];
+   let action="shoot", target="player";
+   const bullet=game.ammo.length?game.ammo[game.ammo.length-1]:false;
+   const live=game.ammo.filter(Boolean).length, blanks=game.ammo.length-live;
+   if(aiLevel==="easy"){
+     target=(Math.random()<0.35)?"self":"player";
+   } else if(aiLevel==="normal"){
+     target=(blanks>live && Math.random()<0.65)?"self":"player";
+     if(ai.hp<=2 && ai.items.cigarette>0 && ai.hp<ai.max) {action="item";target="";var item="cigarette";}
+     else if(ai.items.magnifier>0 && game.ammo.length>0 && Math.random()<0.28){action="item";item="magnifier";target="";}
+   } else {
+     target=(blanks>live && Math.random()<0.85)?"self":"player";
+     if(ai.hp<=3 && ai.items.cigarette>0 && ai.hp<ai.max){action="item";item="cigarette";target="";}
+     else if(ai.items.magnifier>0 && game.ammo.length>0 && Math.random()<0.55){action="item";item="magnifier";target="";}
+     else if(ai.items.saw>0 && ai.saw===0 && Math.random()<0.3){action="item";item="saw";target="";}
+   }
+   // In this game, the chamber's next round is resolved inside doAction.
+   doAction(1,action,target,item);
+   if(game && !game.over && game.active===1) aiTimer=setTimeout(aiTurn,650);
+ }
+ // Wrap broadcast to schedule AI response after every state update.
+ const originalBroadcast=window.broadcastState;
+ window.broadcastState=function(){
+   if(typeof originalBroadcast==="function")originalBroadcast();
+   if(aiMode && game && !game.over && game.active===1 && !aiTimer) aiTimer=setTimeout(aiTurn,650);
+ };
+ document.addEventListener("DOMContentLoaded",function(){
+   $id("aiEasy")?.addEventListener("click",()=>choose("easy"));
+   $id("aiNormal")?.addEventListener("click",()=>choose("normal"));
+   $id("aiHard")?.addEventListener("click",()=>choose("hard"));
+   $id("startAI")?.addEventListener("click",startAI);
+   choose("normal");
+ });
+})();
+</script>
+
+
+<script id="item-motion-logic">
+function playItemMotion(kind, target){
+ const stage=document.getElementById("motionStage"),obj=document.getElementById("motionObject");
+ if(!stage||!obj)return;
+ const names={shot:"SHOT",blank:"CLICK",cigarette:"CIGARETTE",beer:"EJECT SHELL",magnifier:"MAGNIFIER",cuffs:"HANDCUFFS",saw:"HACKSAW",phone:"BURNER PHONE",inverter:"INVERTER",adrenaline:"ADRENALINE",pills:"PILLS"};
+ obj.textContent=names[kind]||"ITEM USED";
+ stage.className="show "+(kind==="shot"||kind==="blank"?kind:"item")+(target?" "+target:"");
+ clearTimeout(window._motionTimeout);
+ window._motionTimeout=setTimeout(()=>{stage.className="";},760);
+}
+</script>
+
+</body></html>
