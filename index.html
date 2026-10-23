@@ -184,6 +184,46 @@ canvas { filter:contrast(1.02) saturate(.88); }
 @media(max-width:700px){#threeStage{height:72vw;min-height:300px;max-height:470px}.hud-card{font-size:10px;padding:6px 7px}.hud-center{font-size:9px;padding:6px}.hud-center b{font-size:11px}#threeHud{inset:7px 7px auto;gap:5px}#threeMessage{font-size:11px;bottom:7px;padding:8px}}
 </style>
 
+
+<style id="table-items-3d-css">
+#threeStage{height:min(76vw,700px);min-height:430px;overflow:hidden}
+#tableItemTray{
+ position:absolute;z-index:5;left:3%;right:3%;bottom:3%;padding:10px 12px 11px;
+ background:linear-gradient(180deg,rgba(25,17,12,.82),rgba(7,5,4,.94));
+ border:1px solid rgba(165,129,77,.8);box-shadow:0 10px 22px #000a,inset 0 1px #b99a6550;
+ transform:perspective(900px) rotateX(4deg);transform-origin:bottom center;
+}
+.tray-label{font:11px Georgia,serif;letter-spacing:.14em;color:#d9bd88;margin:0 0 7px;text-transform:uppercase}
+#items{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:7px}
+#items .item{
+ min-width:0;min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+ color:#d8c49e;border:1px solid #927248;border-radius:1px;
+ background:linear-gradient(145deg,#54402a,#241810 65%,#17100b);
+ box-shadow:0 4px 0 #100b07,0 7px 10px #0008,inset 0 1px #c9aa6a66;
+ font-family:Georgia,serif;font-size:12px;transition:transform .15s,filter .15s;
+}
+#items .item span{font-size:19px;text-shadow:0 0 8px #d6a85b88}
+#items .item small{font-size:9px;color:#b19a72;line-height:1.2;text-align:center}
+#items .item.selected{border:1px solid #b7e28a;box-shadow:0 0 0 1px #b7e28a,0 4px 0 #100b07,0 0 14px #8aff8b55;transform:translateY(-5px) rotateX(-4deg)}
+#items .item:disabled{opacity:.48;filter:grayscale(.7)}
+.table-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.table-actions button{min-height:37px;background:linear-gradient(#4a3623,#1d130c);border:1px solid #8f7046;color:#e0cda5;font-family:Georgia,serif;box-shadow:0 3px 0 #0a0705}
+.table-actions button:disabled{opacity:.4}
+#threeHud{z-index:3}
+@media(max-width:760px){
+ #threeStage{height:112vw;min-height:520px;max-height:720px}
+ #tableItemTray{left:2%;right:2%;bottom:2%;padding:8px}
+ #items{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ #items .item{min-height:47px;font-size:11px;flex-direction:row;flex-wrap:wrap;gap:4px}
+ #items .item span{font-size:16px}
+ #items .item small{font-size:8px;width:100%}
+ .tray-label{font-size:10px}
+ .table-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .table-actions button{font-size:10px;min-height:38px;padding:4px}
+ #threeMessage{bottom:calc(2% + 235px);width:90%}
+}
+</style>
+
 </head>
 <body><div id="motionStage"><div id="motionObject">LAST CHAMBER</div></div>
 <header><div><h1>LAST <span>CHAMBER</span></h1><div class="tag">BROWSER-ONLY · PEER TO PEER</div></div><div class="status" id="connStatus">연결되지 않음</div></header>
@@ -217,7 +257,11 @@ canvas { filter:contrast(1.02) saturate(.88); }
 <article class="center"><div><div class="tag">탄약실 상태</div><div class="digital" id="ammoCount">06 발</div><div class="status" id="ammoInfo">정보 미확인</div></div><div class="table"><div class="shells" id="shells"></div></div><div class="msg" id="message">상대 연결 대기 중...</div></article>
 <article class="fighter"><div class="tag">SUBJECT B</div><h3 id="p1name">플레이어 2</h3><div class="hp" id="p1hp">체력 4/4</div><div class="hearts" id="p1hearts">♥ ♥ ♥ ♥</div><div class="status" id="p1armor"></div><div class="status" id="p1turn"></div></article>
 </div>
-<section class="panel" style="margin-top:12px"><h2>▧ 소지 아이템</h2><div class="items" id="items"></div><div class="actions"><button id="shootEnemy">↗ 상대를 겨눈다</button><button id="shootSelf">↻ 자신을 겨눈다</button><button id="useItem">선택한 아이템 사용</button></div></section>
+<div id="tableItemTray" aria-label="테이블 위 아이템">
+ <div class="tray-label">테이블 위 물품 · 눌러서 선택</div>
+ <div class="items" id="items"></div>
+ <div class="table-actions"><button id="shootEnemy">↗ 상대에게 발사</button><button id="shootSelf">↻ 자신에게 발사</button><button id="useItem">선택 아이템 사용</button></div>
+</div>
 <section class="panel"><h2>▤ 기록 장치</h2><div id="log" class="log"></div></section>
 </section>
 </main>
@@ -552,5 +596,21 @@ if(stage&&canvas){
  window.playItemMotion=(kind,target)=>{gun.rotation.z=.18;setTimeout(()=>gun.rotation.z=-.05,180);if(kind==='shot'){camera.position.z+=.12;setTimeout(()=>camera.position.z-=.12,130)}};
 }
 </script>
+
+
+<script id="table-pickup-motion">
+document.addEventListener("click",e=>{
+ const b=e.target.closest("#items .item");
+ if(!b)return;
+ b.classList.remove("pickup");
+ void b.offsetWidth;
+ b.classList.add("pickup");
+ setTimeout(()=>b.classList.remove("pickup"),650);
+});
+</script>
+<style>
+#items .item.pickup{animation:tablePickup .6s ease both}
+@keyframes tablePickup{0%{transform:translateY(0) rotateX(0)}35%{transform:translateY(-18px) rotateX(-18deg) scale(1.05);filter:brightness(1.6)}100%{transform:translateY(-5px) rotateX(0)}}
+</style>
 
 </body></html>
